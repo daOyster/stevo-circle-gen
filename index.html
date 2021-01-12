@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SVG.js</title>
+  <script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.0/dist/svg.min.js"></script>
+</head>
+<body>
+    <div id="circle-container">
+    </div>
+</body>
+<script>
+
+  SVG.on(document, 'DOMContentLoaded', function() {
+      // initialize SVG.js
+      var draw = SVG().addTo('#circle-container').size(700 ,700);
+
+    // draw pink square
+    var r = 32;
+    var diameter = r*2;
+    var boundLength = (diameter) + 2 + 1;
+    var boundLengthHalf = Math.floor(boundLength/2);
+    var rectSize = 10;
+
+    for(var x = 0; x < boundLength; x++){
+      for(var y = 0; y < boundLength; y++){
+        draw.rect(rectSize-2, rectSize-2).move(1+(x*rectSize), 1+(y*rectSize)).fill('#aac');
+      }
+    }
+    let xb =  0;
+    let yb = r;
+    let d = 3 - (2 * r);
+    draw8way(draw,boundLengthHalf,boundLengthHalf,xb,yb,rectSize,'#f06');
+    while(xb <= yb){
+      if(d > 0){
+        yb--;
+        d=d+(4*xb)-(4*yb)+10;  
+      } else {
+        d = d+(4*xb)+6;
+      }
+      xb++;
+      console.log('x: '+xb+' y: '+yb);
+      // drawSquare(draw,xb + boundLengthHalf,yb + boundLengthHalf,rectSize,'#f06');
+      draw8way(draw,boundLengthHalf,boundLengthHalf,xb,yb,rectSize,'#f06');
+    }
+
+
+    drawSquare(draw,0,0,rectSize,'#afa');
+    draw.rect(0,0).move(0, 0).fill('#afa');
+  });
+
+  function drawSquare(svgRenderer,x,y,rectSize,color){
+    svgRenderer.rect(rectSize-2, rectSize-2).move(1+(x*rectSize), 1+(y*rectSize)).fill(color);
+  }
+
+  function draw8way(svgRenderer,xc,yc,x,y,rectSize,color){
+    drawSquare(svgRenderer,x+xc,y+yc,rectSize,color);  
+    drawSquare(svgRenderer,x+xc,-y+yc,rectSize,color);  
+    drawSquare(svgRenderer,-x+xc,-y+yc,rectSize,color);  
+    drawSquare(svgRenderer,-x+xc,y+yc,rectSize,color);  
+    drawSquare(svgRenderer,y+xc,x+yc,rectSize,color);  
+    drawSquare(svgRenderer,y+xc,-x+yc,rectSize,color);  
+    drawSquare(svgRenderer,-y+xc,-x+yc,rectSize,color);  
+    drawSquare(svgRenderer,-y+xc,x+yc,rectSize,color);  
+  }
+</script>
+</html>
