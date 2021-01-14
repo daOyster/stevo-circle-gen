@@ -4,18 +4,26 @@
   <title>Stevo Circle Generator</title>
 </head>
 <body>
-  <h2>daOyster's Starship Evo Circle Generator</h2> 
-  <label for="diameter-input">Diameter: </label><input name="diameter-input" id="diameter-input" type="text"/>
+  <h2>daOyster's Starship Evo Circle Generator v0.3</h2> 
+  <label for="diameter-input">Diameter: </label><input name="diameter-input" id="diameter-input" type="text" value="32"/>
   <input name="generate-btn" id="generate-btn" type="submit" value="Generate" onclick="test()">
+  <label for="slopes-checkbox">Slopes: </label><input name="slopes-checkbox" id="slopes-checkbox" type="checkbox" checked="1"  onclick="test()">
   <br><br>
   <div id="circle-container">
   </div>
+  <hr>
+  <h2>Change Log:</h2>
+  <p>
+    <h3>Version 0.3:</h3>
+    <p>Mirrored the slopes around the entire circle and slightly tweaked.<br>
+    Still need to fill in the "corner spots" and fix slopes mirroring on odd diameter circles.
+    </p>
+  </p>
 </body>
 <script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.0/dist/svg.min.js"></script>
 <script>
-  
   function test(){
-    dia = 0;
+    let dia = 0;
     try{
       dia = parseInt(document.getElementById("diameter-input").value);
       if(!Number.isInteger(dia)){
@@ -35,8 +43,13 @@
   
   
   function genCircle(draw,diameter,rectSize){
-
-    rectSize = 800/(diameter+2);
+    let drawSlopes = false;
+    if(document.getElementById('slopes-checkbox') && document.getElementById('slopes-checkbox').checked){
+      drawSlopes = true;
+      console.log(drawSlopes);
+    }
+    // rectSize = 800/(diameter+2);
+    rectSize = 15;
 
     // var diameter = 300;
     // var rectSize = 20;
@@ -53,13 +66,14 @@
     
     var boundLengthHalf = Math.floor(boundLength/2);
     
-    if(draw){
-      // draw.clear();
+    if(draw != null){
+      // draw = SVG('#circle-container');
+      // console.log(draw);
       draw.clear();
       draw.size(boundLength*rectSize ,boundLength*rectSize);
       // draw = SVG().addTo('#circle-container').size(boundLength*rectSize ,boundLength*rectSize);
     } else {
-      draw = SVG().addTo('#circle-container').size(boundLength*rectSize ,boundLength*rectSize);
+      draw = SVG().addTo('#circle-container').addClass('circ-cont').size(boundLength*rectSize ,boundLength*rectSize);
     }
     
     
@@ -70,6 +84,8 @@
         draw.rect(rectSize-2, rectSize-2).move(1+(x*rectSize), 1+(y*rectSize)).fill('#ccc');
       }
     }
+
+    // Beserham's circle algorithm tweaked
     let xb =  0;
     let yb = r;
     let d = 3 - (2 * r);
@@ -77,14 +93,18 @@
     let startX = 0, startY = 0;
     let count, prevCount = 0;
     let prevStartX = 0, prevStartY = 0;
+    let first = true;
     while(xb <= yb){
       if(d > 0){
         yb--;
         d=d+(4*xb)-(4*yb)+10;  
-        if(startY != 0){
-          // drawSquare(draw,startX,startY,rectSize,'#fba');
-          // draw.rect(10,10).move(startX+boundLengthHalf*rectSize, startY+boundLengthHalf*rectSize).fill('#afa');
-          let tscal = 0;// count >=1  ? rectSize : 0;
+        draw8way(draw,boundLengthHalf,boundLengthHalf,xb+1,yb,oddAdd,rectSize,'#d06');
+        if(startY != 0 && drawSlopes){
+          let tscal = first && diameter > 6 ? rectSize : 0;
+          
+          first = false;
+          
+          
           if( prevCount < count){
             var polygon = draw.polygon([prevStartX+(boundLengthHalf*rectSize)-tscal,
             startY+(boundLengthHalf*rectSize),
@@ -93,25 +113,52 @@
             prevStartX+(boundLengthHalf*rectSize)-tscal,
             prevStartY+(boundLengthHalf*rectSize)+rectSize])
             .fill('#afa').stroke({ width: 1 });
+            draw8waySlope(draw,boundLengthHalf*rectSize,boundLengthHalf*rectSize,[
+              startY,
+              prevStartX+(startX-prevStartX+count*rectSize)-tscal,
+              startY,
+              prevStartX-tscal,
+              prevStartY+rectSize
+            ],oddAdd,rectSize,'#afa');
           }
           else if( prevCount == count && prevStartX){
-            console.log(prevStartX);
-            var polygon = draw.polygon([prevStartX+(boundLengthHalf*rectSize)-tscal,
-            startY+(boundLengthHalf*rectSize),
-            prevStartX+(boundLengthHalf*rectSize)+(startX-prevStartX+count*rectSize)-tscal,
-            startY+(boundLengthHalf*rectSize),
-            prevStartX+(boundLengthHalf*rectSize)-tscal,
-            prevStartY+(boundLengthHalf*rectSize)+rectSize])
-            .fill('#57c').stroke({ width: 1 });
+            // console.log(prevStartX);
+            // var polygon = draw.polygon([prevStartX+(boundLengthHalf*rectSize)-tscal,
+            // startY+(boundLengthHalf*rectSize),
+            // prevStartX+(boundLengthHalf*rectSize)+(startX-prevStartX+count*rectSize)-tscal,
+            // startY+(boundLengthHalf*rectSize),
+            // prevStartX+(boundLengthHalf*rectSize)-tscal,
+            // prevStartY+(boundLengthHalf*rectSize)+rectSize])
+            // .fill('#57c').stroke({ width: 1 });
+            // draw8way(draw,boundLengthHalf,boundLengthHalf,xb+1,yb,oddAdd,rectSize,'#d06');
+            draw8waySlope(draw,boundLengthHalf*rectSize,boundLengthHalf*rectSize,[
+              prevStartX-tscal,
+              startY,
+              prevStartX+(startX-prevStartX+count*rectSize)-tscal,
+              startY,
+              prevStartX-tscal,
+              prevStartY+rectSize
+            ],oddAdd,rectSize,'#57c');
+            
           }
           else {
-            var polygon = draw.polygon([startX+boundLengthHalf*rectSize-tscal,
-            startY+boundLengthHalf*rectSize,
-            startX+boundLengthHalf*rectSize+(rectSize*count)-tscal,
-            startY+boundLengthHalf*rectSize,
-            startX+boundLengthHalf*rectSize-tscal,
-            startY+boundLengthHalf*rectSize+rectSize])
-            .fill('#aff').stroke({ width: 1 });
+            // var polygon = draw.polygon([
+              //   startX+boundLengthHalf*rectSize-tscal,
+              //   startY+boundLengthHalf*rectSize,
+              //   startX+boundLengthHalf*rectSize+(rectSize*count)-tscal,
+              //   startY+boundLengthHalf*rectSize,
+              //   startX+boundLengthHalf*rectSize-tscal,
+              //   startY+boundLengthHalf*rectSize+rectSize
+              // ]).fill('#aff').stroke({ width: 1 });
+            // draw8way(draw,boundLengthHalf,boundLengthHalf,xb+1,yb,oddAdd,rectSize,'#d06');
+            draw8waySlope(draw,boundLengthHalf*rectSize,boundLengthHalf*rectSize,[
+              startX-tscal,
+              startY,
+              startX+(rectSize*count),
+              startY,
+              startX-tscal,
+              startY+rectSize
+            ],oddAdd,rectSize,'#aff');
           }
         }
         
@@ -125,18 +172,19 @@
         
         startX = (xb+1)*rectSize;
         startY = (yb+1)*rectSize;
-
+        
         prevCount = count;
         count = 0;
       } else {
         // count++;
         d = d+(4*xb)+6;
+        draw8way(draw,boundLengthHalf,boundLengthHalf,xb+1,yb,oddAdd,rectSize,'#d06');
       }
       xb++;
       count++;
-      console.log('x: '+xb+' y: '+yb);
+      // console.log('x: '+xb+' y: '+yb);
       // drawSquare(draw,xb + boundLengthHalf,yb + boundLengthHalf,rectSize,'#f06');
-      draw8way(draw,boundLengthHalf,boundLengthHalf,xb,yb,oddAdd,rectSize,'#d06');
+      // draw8way(draw,boundLengthHalf,boundLengthHalf,xb,yb,oddAdd,rectSize,'#d06');
       // await new Promise(r => setTimeout(r,33));
     }
     
@@ -164,10 +212,91 @@
     drawSquare(svgRenderer,-y+xc-oddAdd,-x+yc-oddAdd,rectSize,color);  
     drawSquare(svgRenderer,-y+xc-oddAdd,x+yc,rectSize,color);  
   }
+
+  function draw8waySlope(draw,xc,yc,p,oddAdd,rectSize,color){
+    let tWidth = xc * rectSize;
+    let theight = yc * rectSize;
+    let x1 = p[0], y1 = p[1];
+    let x2 = p[2], y2 = p[3];
+    let x3 = p[4], y3 = p[5];
+
+    // drawSquare(svgRenderer,y+xc,x+yc,rectSize,color);  
+    var polygon = draw.polygon([
+            x1+(xc),
+            y1+(yc),
+            x2+yc,
+            y2+(yc),
+            x3+(xc),
+            y3+(yc)
+          ]).fill(color).stroke({ width: 1 });
+          
+          var polygon = draw.polygon([
+            y1+(yc),
+            x1+(xc),
+            y2+(yc),
+            x2+yc,
+            y3+(yc),
+            x3+(xc)
+          ]).fill(color).stroke({ width: 1 });
+    // drawSquare(svgRenderer,x+xc,-y+yc-oddAdd,rectSize,color);
+    var polygon = draw.polygon([
+            x1+(xc),
+            (0-y1)+(yc-oddAdd),
+            x2+xc,
+            (0-y2)+(yc-oddAdd),
+            x3+(xc),
+            (0-y3)+(yc-oddAdd)
+          ]).fill(color).stroke({ width: 1 });  
+    // drawSquare(svgRenderer,-x+xc-oddAdd,-y+yc-oddAdd,rectSize,color);
+    var polygon = draw.polygon([
+            (0-x1)+(xc-oddAdd),
+            (0-y1)+(yc-oddAdd),
+            (0-x2)+xc-oddAdd,
+            (0-y2)+(yc-oddAdd),
+            (0-x3)+(xc-oddAdd),
+            (0-y3)+(yc)-oddAdd
+          ]).fill(color).stroke({ width: 1 });  
+    // drawSquare(svgRenderer,-x+xc-oddAdd,y+yc,rectSize,color);
+    var polygon = draw.polygon([
+            (0-x1)+(xc)-oddAdd,
+            (y1)+(yc),
+            (0-x2)+xc-oddAdd,
+            (y2)+(yc),
+            (0-x3)+(xc)-oddAdd,
+            (y3)+(yc)
+          ]).fill(color).stroke({ width: 1 });
+    // drawSquare(svgRenderer,y+xc,-x+yc-oddAdd,rectSize,color);
+    var polygon = draw.polygon([
+            (y1)+(xc),
+            (0-x1)+(yc)-oddAdd,
+            (y2)+(xc),
+            (0-x2)+yc-oddAdd,
+            (y3)+(xc),
+            (0-x3)+(yc)-oddAdd
+          ]).fill(color).stroke({ width: 1 });
+    // drawSquare(svgRenderer,-y+xc-oddAdd,-x+yc-oddAdd,rectSize,color);  
+    var polygon = draw.polygon([
+            (0-y1)+(xc)-oddAdd,
+            (0-x1)+(yc)-oddAdd,
+            (0-y2)+(xc)-oddAdd,
+            (0-x2)+yc-oddAdd,
+            (0-y3)+(xc)-oddAdd,
+            (0-x3)+(yc)-oddAdd
+          ]).fill(color).stroke({ width: 1 });
+    // drawSquare(svgRenderer,-y+xc-oddAdd,x+yc,rectSize,color);
+    var polygon = draw.polygon([
+            (0-y1)+(xc)-oddAdd,
+            (x1)+(yc)-oddAdd,
+            (0-y2)+(xc)-oddAdd,
+            (x2)+yc-oddAdd,
+            (0-y3)+(xc)-oddAdd,
+            (x3)+(yc)-oddAdd
+          ]).fill(color).stroke({ width: 1 });  
+  }
   
-  // SVG.on(document, 'DOMContentLoaded', new function(drawSVG){
+  this.drawSVG = genCircle(this.drawSVG,32,20);//.then(new function(arg){this.drawSVG = arg;console.log(arg);});
     // var drawSVG = null;//SVG().addTo('#circle-container').size(boundLength*rectSize ,boundLength*rectSize);
     // var drawSVG = genCircle(drawSVG,32,20);
-    var drawSVG = genCircle(drawSVG,32,20);
+    // var drawSVG = await genCircle(drawSVG,32,20);
   </script>
 </html>
