@@ -1,27 +1,166 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Stevo Circle Generator</title>
+  <title>Oyster's Circle Generator</title>
+  <link rel="stylesheet" type="text/css" href="style2.css">
+  <meta name="theme-color" content="#802400">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="daOyster's Starship Evo Circle Generator">
+  <meta property="og:description" content="This tool lets you generate a circle of any size with or without slopes for use as a guide to building cicles in the game Starship Evo">
+  <meta property="og:image" content="http://www.brandonost.net/circleexample.jpg">
+  <meta property="og:image:secure_url" content="https://www.brandonost.net/circleexample.jpg">
+  <meta property="og:url" content="https://www.brandonost.net/stevo_circle_gen.html/">
 </head>
 <body>
-  <h2>daOyster's Starship Evo Circle Generator v0.3</h2> 
-  <label for="diameter-input">Diameter: </label><input name="diameter-input" id="diameter-input" type="text" value="32"/>
-  <input name="generate-btn" id="generate-btn" type="submit" value="Generate" onclick="test()">
-  <label for="slopes-checkbox">Slopes: </label><input name="slopes-checkbox" id="slopes-checkbox" type="checkbox" checked="1"  onclick="test()">
-  <br><br>
-  <div id="circle-container">
-  </div>
-  <hr>
-  <h2>Change Log:</h2>
-  <p>
-    <h3>Version 0.3:</h3>
-    <p>Mirrored the slopes around the entire circle and slightly tweaked.<br>
-    Still need to fill in the "corner spots" and fix slopes mirroring on odd diameter circles.
-    </p>
-  </p>
+  <div class="slant">
+
+    <nav id="mynav" class="top-nav">
+        <a href="/index.html">Home</a>
+        <a href="/blog.html">Blog</a>
+        <a href="/projects.html">Portfolio</a>
+        <a href="/stevo_circle_gen.html">Circle Gen</a>
+    </nav>
+    <section id="sad" class="top-banner">
+        <div class="top-banner-overlay">
+            <!-- stuff here -->
+            <h1>BrandonOst.net</h1>
+        </div>
+    </section>
+</div>
+<br>       
+    <div class="v-spacer" style="height: 120px;"></div>
+<!-- <div style="height:400px; padding: 0; background-size: 100% 400px; background-image: url(img/mountains.png)"></div>  -->
+    <div class="card">
+        <div>
+          <h2>daOyster's Starship Evo Circle Generator v0.6.1</h2>
+          <div style="display: flex; justify-content: flex-start;">
+          <div id="circle-container" style="height:70vh; width: 70vh; margin-right:40px">
+          </div>
+          <div>
+            <div>
+              <label for="diameter-input">Diameter: </label><input name="diameter-input" id="diameter-input" type="text" value="32"/>
+              <input name="generate-btn" id="generate-btn" type="submit" value="Generate" onclick="test()">
+            </div>
+            <div>
+              <label for="slopes-checkbox">Slopes: </label><input name="slopes-checkbox" id="slopes-checkbox" type="checkbox" checked="1"  onclick="test()">
+            </div>
+            <br>
+            <div class="slidecontainer">
+              <label for="rect-slider">Zoom: </label>
+            <input type="range" name="rect-slider" min="0" max="10000" value="0" class="slider" style="width:40%" id="rect-size-slider" oninput="changeZoom()">
+            <button style="margin-left:2em;" type="button" onclick="resetOffset()">Recenter</button>
+            <h4><strong>Tip: </strong>Both the arrow keys and click-dragging can be used to pan around the circle.</h3>
+          </div>
+          <br><br>
+          </div>
+          <div></div>
+          </div>
+
+          <hr>
+          <h2>Change Log:</h2>
+          <p>
+            <h3>Version 0.6.1:</h3>
+            <p>-Added Mouse-based panning and changed zoom to focus on viewport center instead of top-left.
+              <br>
+              -Added Length to the first 1/8th of the circle block segments
+            </p>
+          </p>
+          <p>
+            <h3>Version 0.5.1:</h3>
+            <p>Switched the way the grid is drawn, added panning/zoom support 
+              This fix should make this run a lot faster and also means you don't need to depend on 
+              the browser's built in zoom feature.
+            </p>
+          </p>
+          <p>
+            <h3>Version 0.4:</h3>
+            <p>Slopes now mirror correctly on odd sized circles. There is still an occasional bug where the 4 "corner" slopes will draw or not draw at the wrong times. 
+            <br>Next step is to support exporting images to .png/.jpg and fixing that.
+            </p>
+          </p>
+          <p>
+            <h3>Version 0.3:</h3>
+            <p>Mirrored the slopes around the entire circle and slightly tweaked.<br>
+              Still need to fill in the "corner spots" and fix slopes mirroring on odd diameter circles.
+            </p>
+          </p>
+        </div>
+      </div>
 </body>
 <script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.0/dist/svg.min.js"></script>
 <script>
+  var draw;
+  let viewSize = 1.0;
+  var offsetX = 0.0, offsetY = 0.0;
+
+  window.addEventListener("keydown", function(event) {
+  if (event.defaultPrevented) {
+    return; // Do nothing if event already handled
+  }
+  // if(this.draw){
+
+    viewSize = (document.getElementById('rect-size-slider').getAttribute('max')-document.getElementById('rect-size-slider').value)/document.getElementById('rect-size-slider').getAttribute('max');
+    let diameter = parseInt(document.getElementById('diameter-input').value);
+    let boundLength = (diameter) + 2;
+    let rectSize = 16;
+    
+    switch(event.code) {
+      case "ArrowDown":
+        // Handle "back"
+        this.offsetY += 16.0;
+        event.preventDefault();
+        this.changeZoom();
+        
+        break;
+        case "ArrowUp":
+          // Handle "forward"
+          this.offsetY += -16.0;
+          event.preventDefault();
+          this.changeZoom();
+          
+          break;
+          case "ArrowLeft":
+            // Handle "turn left"
+            this.offsetX += -16.0;
+            event.preventDefault();
+            this.changeZoom();
+            
+            break;
+            case "ArrowRight":
+              // Handle "turn right"
+              this.offsetX += 16.0;
+              event.preventDefault();
+              this.changeZoom();
+              
+              break;
+              // Consume the event so it doesn't get handled twice
+            }
+        // }
+  }, true);
+          
+function resetOffset(){
+  this.offsetX = 0;
+  this.offsetY = 0;
+  changeZoom();
+}  
+
+ function changeZoom(){
+
+  viewSize = (document.getElementById('rect-size-slider').getAttribute('max')-document.getElementById('rect-size-slider').value)/document.getElementById('rect-size-slider').getAttribute('max');
+  viewSize = (viewSize*viewSize);
+
+  if(this.draw){
+    let diameter = parseInt(document.getElementById('diameter-input').value);
+    let boundLength = (diameter) + 2;
+    let rectSize = 16;
+    let zoomoffset = (boundLength*rectSize)-(boundLength*viewSize*rectSize);
+    // console.log('updating zoom: ',viewSize,'| ',boundLength*viewSize);
+    this.draw.viewbox(0.0+this.offsetX+zoomoffset/2,0.0+this.offsetY+zoomoffset/2,(boundLength*viewSize*rectSize),(boundLength*viewSize*rectSize));
+  } else {
+    console.log('Warning: No drawable svg yet');
+  }
+ }
+
   function test(){
     let dia = 0;
     try{
@@ -31,14 +170,15 @@
         document.getElementById("diameter-input").value = '';
         dia = '';
       }else{
-        return genCircle(this.drawSVG,dia,20);
+        this.offsetX = 0.0;
+        this.offsetY = 0.0;
+        document.getElementById('rect-size-slider').value = 0;
+        return genCircle(this.draw,dia,20);
       }
     } catch(err){
       alert('Please enter a valid number');
       console.error(err);
     }
-    // alert("hello: "+dia);
-    // console.log(this.drawSVG);
   }
   
   
@@ -46,43 +186,40 @@
     let drawSlopes = false;
     if(document.getElementById('slopes-checkbox') && document.getElementById('slopes-checkbox').checked){
       drawSlopes = true;
-      console.log(drawSlopes);
     }
-    // rectSize = 800/(diameter+2);
-    rectSize = 15;
+ 
+    rectSize = 16;
 
-    // var diameter = 300;
-    // var rectSize = 20;
     var oddAdd = 1;
     var boundLength = (diameter) + 1 + oddAdd;
+    let drawCorner = false;
     if(diameter % 2 != 0){
       oddAdd = 0;
       diameter = diameter - 1
     }else{
+      drawCorner = true;
       diameter = diameter - 2
     }
     var r = diameter / 2 ;
     
+    let cornerLength = Math.ceil(r/ (Math.sqrt(2)));
     
     var boundLengthHalf = Math.floor(boundLength/2);
+    let viewSize = (document.getElementById('rect-size-slider').getAttribute('max')-document.getElementById('rect-size-slider').value)/document.getElementById('rect-size-slider').getAttribute('max');
     
-    if(draw != null){
-      // draw = SVG('#circle-container');
-      // console.log(draw);
-      draw.clear();
-      draw.size(boundLength*rectSize ,boundLength*rectSize);
-      // draw = SVG().addTo('#circle-container').size(boundLength*rectSize ,boundLength*rectSize);
+    if(this.draw != null){
+      this.draw.clear();
+      this.draw.viewbox(0,0,boundLength*rectSize*viewSize,boundLength*rectSize*viewSize);
     } else {
-      draw = SVG().addTo('#circle-container').addClass('circ-cont').size(boundLength*rectSize ,boundLength*rectSize);
+      this.draw = SVG().addTo('#circle-container').addClass('circ-cont').size('100%','100%').viewbox(0,0,boundLength*rectSize*viewSize,boundLength*rectSize*viewSize);
     }
-    
+    var draw = this.draw;
     
     draw.rect(rectSize*boundLength, rectSize*boundLength).fill('#baa');
     
     for(var x = 0; x < boundLength; x++){
-      for(var y = 0; y < boundLength; y++){
-        draw.rect(rectSize-2, rectSize-2).move(1+(x*rectSize), 1+(y*rectSize)).fill('#ccc');
-      }
+      draw.line((x*rectSize),0,(x*rectSize),(boundLength*rectSize)).stroke({width:rectSize/15,color:'#ccc'});
+      draw.line(0,(x*rectSize),(boundLength*rectSize),(x*rectSize)).stroke({width:rectSize/15,color:'#ccc'});
     }
 
     // Beserham's circle algorithm tweaked
@@ -91,29 +228,34 @@
     let d = 3 - (2 * r);
     draw8way(draw,boundLengthHalf,boundLengthHalf,xb,yb,oddAdd,rectSize,'#f6c');
     let startX = 0, startY = 0;
-    let count, prevCount = 0;
+    let count = 0, prevCount = 0;
     let prevStartX = 0, prevStartY = 0;
     let first = true;
+    let tscal = 0;
     while(xb <= yb){
       if(d > 0){
         yb--;
         d=d+(4*xb)-(4*yb)+10;  
         draw8way(draw,boundLengthHalf,boundLengthHalf,xb+1,yb,oddAdd,rectSize,'#d06');
+
+        // Draw the block segment length text
+        // drawSquare(draw,-yb+boundLengthHalf-oddAdd,-xb+boundLengthHalf-oddAdd,rectSize,"#ddd");  
+        drawText(draw,-yb+boundLengthHalf-oddAdd,-xb+boundLengthHalf-oddAdd,rectSize,"#555",'|:'+count,rectSize-2);  
+
         if(startY != 0 && drawSlopes){
-          let tscal = first && diameter > 6 ? rectSize : 0;
+          tscal = first && diameter > 6 ? rectSize : 0;
           
           first = false;
-          
-          
           if( prevCount < count){
             var polygon = draw.polygon([prevStartX+(boundLengthHalf*rectSize)-tscal,
-            startY+(boundLengthHalf*rectSize),
-            prevStartX+(boundLengthHalf*rectSize)+(startX-prevStartX+count*rectSize)-tscal,
-            startY+(boundLengthHalf*rectSize),
-            prevStartX+(boundLengthHalf*rectSize)-tscal,
-            prevStartY+(boundLengthHalf*rectSize)+rectSize])
-            .fill('#afa').stroke({ width: 1 });
+              startY+(boundLengthHalf*rectSize),
+              prevStartX+(boundLengthHalf*rectSize)+(startX-prevStartX+count*rectSize)-tscal,
+              startY+(boundLengthHalf*rectSize),
+              prevStartX+(boundLengthHalf*rectSize)-tscal,
+              prevStartY+(boundLengthHalf*rectSize)+rectSize
+            ]).fill('#afa').stroke({ width: 1 });
             draw8waySlope(draw,boundLengthHalf*rectSize,boundLengthHalf*rectSize,[
+              prevStartX-tscal,
               startY,
               prevStartX+(startX-prevStartX+count*rectSize)-tscal,
               startY,
@@ -122,15 +264,6 @@
             ],oddAdd,rectSize,'#afa');
           }
           else if( prevCount == count && prevStartX){
-            // console.log(prevStartX);
-            // var polygon = draw.polygon([prevStartX+(boundLengthHalf*rectSize)-tscal,
-            // startY+(boundLengthHalf*rectSize),
-            // prevStartX+(boundLengthHalf*rectSize)+(startX-prevStartX+count*rectSize)-tscal,
-            // startY+(boundLengthHalf*rectSize),
-            // prevStartX+(boundLengthHalf*rectSize)-tscal,
-            // prevStartY+(boundLengthHalf*rectSize)+rectSize])
-            // .fill('#57c').stroke({ width: 1 });
-            // draw8way(draw,boundLengthHalf,boundLengthHalf,xb+1,yb,oddAdd,rectSize,'#d06');
             draw8waySlope(draw,boundLengthHalf*rectSize,boundLengthHalf*rectSize,[
               prevStartX-tscal,
               startY,
@@ -142,15 +275,7 @@
             
           }
           else {
-            // var polygon = draw.polygon([
-              //   startX+boundLengthHalf*rectSize-tscal,
-              //   startY+boundLengthHalf*rectSize,
-              //   startX+boundLengthHalf*rectSize+(rectSize*count)-tscal,
-              //   startY+boundLengthHalf*rectSize,
-              //   startX+boundLengthHalf*rectSize-tscal,
-              //   startY+boundLengthHalf*rectSize+rectSize
-              // ]).fill('#aff').stroke({ width: 1 });
-            // draw8way(draw,boundLengthHalf,boundLengthHalf,xb+1,yb,oddAdd,rectSize,'#d06');
+
             draw8waySlope(draw,boundLengthHalf*rectSize,boundLengthHalf*rectSize,[
               startX-tscal,
               startY,
@@ -164,10 +289,8 @@
         
         
         if(prevCount > count){
-          // console.log('yar');
           prevStartX = startX;
           prevStartY = startY;
-          
         }
         
         startX = (xb+1)*rectSize;
@@ -176,18 +299,24 @@
         prevCount = count;
         count = 0;
       } else {
-        // count++;
         d = d+(4*xb)+6;
         draw8way(draw,boundLengthHalf,boundLengthHalf,xb+1,yb,oddAdd,rectSize,'#d06');
       }
       xb++;
       count++;
-      // console.log('x: '+xb+' y: '+yb);
-      // drawSquare(draw,xb + boundLengthHalf,yb + boundLengthHalf,rectSize,'#f06');
-      // draw8way(draw,boundLengthHalf,boundLengthHalf,xb,yb,oddAdd,rectSize,'#d06');
-      // await new Promise(r => setTimeout(r,33));
     }
-    
+  
+    // Handle special 4 corners
+    if(drawCorner && drawSlopes){
+      draw8waySlope(draw,boundLengthHalf*rectSize,boundLengthHalf*rectSize,[
+                (cornerLength*rectSize)-tscal,
+                (cornerLength*rectSize),
+                (cornerLength*rectSize)+(rectSize),
+                (cornerLength*rectSize),
+                (cornerLength*rectSize)-tscal,
+                (cornerLength*rectSize)+rectSize
+              ],oddAdd,rectSize,'#5af');
+    }
     
     drawSquare(draw,0,0,rectSize,'#afa');
     draw.circle((rectSize)*(diameter)+(rectSize*(1+oddAdd))).fill({ color: '#fff', opacity: 0.0 }).stroke({ color: '#1AA', opacity: 1, width: 2 }).move(rectSize*1,rectSize*1);
@@ -195,14 +324,15 @@
     return draw;
   }
   
-  
-  
   function drawSquare(svgRenderer,x,y,rectSize,color){
     svgRenderer.rect(rectSize-2, rectSize-2).move(1+(x*rectSize), 1+(y*rectSize)).fill(color);
   }
+
+  function drawText(svgRenderer,x,y,rectSize,color,text,size){
+    svgRenderer.text(text).attr({x:1+(x*rectSize), y:1+(y*rectSize)-rectSize/2.2,anchor:'middle'}).font({'fill':color,'size':rectSize-2});
+  }
   
   function draw8way(svgRenderer,xc,yc,x,y,oddAdd,rectSize,color){
-    
     drawSquare(svgRenderer,x+xc,y+yc,rectSize,color);  
     drawSquare(svgRenderer,x+xc,-y+yc-oddAdd,rectSize,color);  
     drawSquare(svgRenderer,-x+xc-oddAdd,-y+yc-oddAdd,rectSize,color);  
@@ -219,8 +349,8 @@
     let x1 = p[0], y1 = p[1];
     let x2 = p[2], y2 = p[3];
     let x3 = p[4], y3 = p[5];
+    let oddAddT = oddAdd ? 0 : rectSize;
 
-    // drawSquare(svgRenderer,y+xc,x+yc,rectSize,color);  
     var polygon = draw.polygon([
             x1+(xc),
             y1+(yc),
@@ -238,65 +368,136 @@
             y3+(yc),
             x3+(xc)
           ]).fill(color).stroke({ width: 1 });
-    // drawSquare(svgRenderer,x+xc,-y+yc-oddAdd,rectSize,color);
+  
     var polygon = draw.polygon([
             x1+(xc),
-            (0-y1)+(yc-oddAdd),
+            (0-y1)+(yc+oddAddT),
             x2+xc,
-            (0-y2)+(yc-oddAdd),
+            (0-y2)+(yc+oddAddT),
             x3+(xc),
-            (0-y3)+(yc-oddAdd)
+            (0-y3)+(yc+oddAddT)
           ]).fill(color).stroke({ width: 1 });  
-    // drawSquare(svgRenderer,-x+xc-oddAdd,-y+yc-oddAdd,rectSize,color);
     var polygon = draw.polygon([
-            (0-x1)+(xc-oddAdd),
-            (0-y1)+(yc-oddAdd),
-            (0-x2)+xc-oddAdd,
-            (0-y2)+(yc-oddAdd),
-            (0-x3)+(xc-oddAdd),
-            (0-y3)+(yc)-oddAdd
+            (0-x1)+(xc+oddAddT),
+            (0-y1)+(yc+oddAddT),
+            (0-x2)+xc+oddAddT,
+            (0-y2)+(yc+oddAddT),
+            (0-x3)+(xc+oddAddT),
+            (0-y3)+(yc)+oddAddT
           ]).fill(color).stroke({ width: 1 });  
-    // drawSquare(svgRenderer,-x+xc-oddAdd,y+yc,rectSize,color);
     var polygon = draw.polygon([
-            (0-x1)+(xc)-oddAdd,
+            (0-x1)+(xc)+oddAddT,
             (y1)+(yc),
-            (0-x2)+xc-oddAdd,
+            (0-x2)+xc+oddAddT,
             (y2)+(yc),
-            (0-x3)+(xc)-oddAdd,
+            (0-x3)+(xc)+oddAddT,
             (y3)+(yc)
           ]).fill(color).stroke({ width: 1 });
-    // drawSquare(svgRenderer,y+xc,-x+yc-oddAdd,rectSize,color);
     var polygon = draw.polygon([
             (y1)+(xc),
-            (0-x1)+(yc)-oddAdd,
+            (0-x1)+(yc)+oddAddT,
             (y2)+(xc),
-            (0-x2)+yc-oddAdd,
+            (0-x2)+yc+oddAddT,
             (y3)+(xc),
-            (0-x3)+(yc)-oddAdd
+            (0-x3)+(yc)+oddAddT
           ]).fill(color).stroke({ width: 1 });
-    // drawSquare(svgRenderer,-y+xc-oddAdd,-x+yc-oddAdd,rectSize,color);  
     var polygon = draw.polygon([
-            (0-y1)+(xc)-oddAdd,
-            (0-x1)+(yc)-oddAdd,
-            (0-y2)+(xc)-oddAdd,
-            (0-x2)+yc-oddAdd,
-            (0-y3)+(xc)-oddAdd,
-            (0-x3)+(yc)-oddAdd
+            (0-y1)+(xc)+oddAddT,
+            (0-x1)+(yc)+oddAddT,
+            (0-y2)+(xc)+oddAddT,
+            (0-x2)+yc+oddAddT,
+            (0-y3)+(xc)+oddAddT,
+            (0-x3)+(yc)+oddAddT
           ]).fill(color).stroke({ width: 1 });
-    // drawSquare(svgRenderer,-y+xc-oddAdd,x+yc,rectSize,color);
     var polygon = draw.polygon([
-            (0-y1)+(xc)-oddAdd,
-            (x1)+(yc)-oddAdd,
-            (0-y2)+(xc)-oddAdd,
-            (x2)+yc-oddAdd,
-            (0-y3)+(xc)-oddAdd,
-            (x3)+(yc)-oddAdd
+            (0-y1)+(xc)+oddAddT,
+            (x1)+(yc)+0,
+            (0-y2)+(xc)+oddAddT,
+            (x2)+yc+0,
+            (0-y3)+(xc)+oddAddT,
+            (x3)+(yc)+0
           ]).fill(color).stroke({ width: 1 });  
   }
   
-  this.drawSVG = genCircle(this.drawSVG,32,20);//.then(new function(arg){this.drawSVG = arg;console.log(arg);});
-    // var drawSVG = null;//SVG().addTo('#circle-container').size(boundLength*rectSize ,boundLength*rectSize);
-    // var drawSVG = genCircle(drawSVG,32,20);
-    // var drawSVG = await genCircle(drawSVG,32,20);
+  this.drawSVG = genCircle(this.drawSVG,32,20);
+  
+  var svg = window.document.querySelector('svg'); 
+  var point = svg.createSVGPoint();
+  var isPanning = false;
+
+  function getPointFromEvent(e){
+    if (event.targetTouches) {
+      point.x = event.targetTouches[0].clientX;
+      point.y = event.targetTouches[0].clientY;
+    } else {
+      point.x = event.clientX;
+      point.y = event.clientY;
+    }
+
+    var invertedPointMatrix = svg.getScreenCTM().inverse();
+    return point.matrixTransform(invertedPointMatrix);
+  }
+
+  var pointerMoved;
+  var pointerOrigin;
+  function onPointerUp(e){
+    this.isPanning = false;
+    if(this.isPanning){
+      e.preventDefault();
+      var newPoint = getPointFromEvent(e);
+      let offX = newPoint.x - this.pointerOrigin.x;
+      this.offsetX += offX;
+    }
+  }
+  
+  function onPointerMove(e){
+    if(this.isPanning){
+      e.preventDefault();
+      var newPoint = getPointFromEvent(e);
+      let offX = newPoint.x - this.pointerOrigin.x;
+      let offY = newPoint.y - this.pointerOrigin.y;
+      
+      offsetX = offsetX - offX;
+      offsetY = offsetY - offY;
+      pointerOrigin = newPoint;
+      changeZoom();
+    }
+  }
+  
+  function onPointerDown(e){
+    this.pointerOrigin = getPointFromEvent(e);
+    this.isPanning = true;
+    e.preventDefault();
+  }
+
+  
+  if (window.PointerEvent) {
+    svg.addEventListener('pointerdown', onPointerDown); // Pointer is pressed
+    svg.addEventListener('pointerup', onPointerUp); // Releasing the pointer
+    svg.addEventListener('pointerleave', onPointerUp); // Pointer gets out of the SVG area
+    svg.addEventListener('pointermove', onPointerMove); // Pointer is moving
+  } else {
+    // Add all mouse events listeners fallback
+    svg.addEventListener('mousedown', onPointerDown); // Pressing the mouse
+    svg.addEventListener('mouseup', onPointerUp); // Releasing the mouse
+    svg.addEventListener('mouseleave', onPointerUp); // Mouse gets out of the SVG area
+    svg.addEventListener('mousemove', onPointerMove); // Mouse is moving
+
+    // Add all touch events listeners fallback
+    svg.addEventListener('touchstart', onPointerDown); // Finger is touching the screen
+    svg.addEventListener('touchend', onPointerUp); // Finger is no longer touching the screen
+    svg.addEventListener('touchmove', onPointerMove); // Finger is moving
+  }
+
+  function wheelZoom(e){
+    e.preventDefault();
+    let maxVal = document.getElementById('rect-size-slider').getAttribute('max');
+    let currentVal = document.getElementById('rect-size-slider').value;
+    document.getElementById('rect-size-slider').stepDown(e.deltaY*5);
+    changeZoom();
+  }
+
+  svg.onwheel = wheelZoom;
+
   </script>
 </html>
